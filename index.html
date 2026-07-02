@@ -1,0 +1,608 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="robots" content="noindex, nofollow" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>GRO-592 — Rep Signal Focused Cross-Section Tabs (Prototype)</title>
+<style>
+  /* ---- Real gsTheme tokens (static; --scale-* calc dropped for the mockup) ---- */
+  :root {
+    --primary-1:#5264FF; --primary-2:#4632C4; --primary-3:#37286B;
+    --mono-50:#F7F8F9; --mono-75:#F2F3F5; --mono-100:#E9EBEE; --mono-200:#D9DCE1;
+    --mono-300:#BCC0C9; --mono-400:#9A9FAB; --mono-500:#767C8B; --mono-600:#5A6070;
+    --mono-700:#3E4353; --mono-800:#262A38; --mono-900:#130C2E;
+    --red-600:#FF3726; --red-100:#FFE3E0;
+    --emerald-600:#059669; --emerald-700:#047857; --emerald-100:#D1FAE5; --emerald-50:#ECFDF5; --emerald-300:#6EE7B7;
+    --amber-50:#FFFBEB; --amber-300:#FCD34D; --amber-800:#92400E;
+    /* spacing (px, from responsiveSpacing.ts) */
+    --s-50:4px; --s-75:6px; --s-100:8px; --s-125:10px; --s-150:12px; --s-200:16px; --s-300:24px; --s-400:32px;
+    --radius:12px;
+  }
+  * { box-sizing:border-box; }
+  html,body { margin:0; }
+  body {
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    background:var(--mono-75); color:var(--mono-900); line-height:1.4;
+    padding:32px 28px 80px;
+  }
+  a { color:var(--primary-2); }
+  .page-head { max-width:1180px; margin:0 auto 8px; }
+  .page-head h1 { font-size:22px; margin:0 0 4px; letter-spacing:-.01em; }
+  .page-head .sub { color:var(--mono-600); font-size:13px; }
+  .page-head .meta { color:var(--mono-500); font-size:12px; margin-top:8px; }
+  .page-head .meta code { background:var(--mono-100); padding:1px 5px; border-radius:5px; }
+
+  .legend { display:flex; gap:16px; flex-wrap:wrap; max-width:1180px; margin:14px auto 4px; font-size:11.5px; color:var(--mono-600); }
+  .legend .chip { display:inline-flex; align-items:center; gap:6px; }
+  .sw { width:12px; height:12px; border-radius:3px; display:inline-block; }
+
+  /* ---- screen = frame + guide side-by-side ---- */
+  .screen { max-width:1180px; margin:34px auto; display:flex; gap:22px; align-items:flex-start; }
+  .screen > .frame-wrap { flex:0 0 auto; }
+  .guide { flex:1 1 auto; min-width:220px; padding-top:6px; }
+  .guide h3 { font-size:12px; text-transform:uppercase; letter-spacing:.08em; color:var(--primary-2); margin:0 0 8px; }
+  .guide ul { margin:0; padding-left:16px; }
+  .guide li { font-size:12.5px; color:var(--mono-700); margin-bottom:8px; }
+  .guide .bug { color:var(--red-600); font-weight:600; }
+  .screen-label { font-size:12px; font-weight:700; color:var(--mono-500); text-transform:uppercase; letter-spacing:.06em; margin:0 auto 10px; max-width:1180px; }
+
+  /* ================= iPad split frame ================= */
+  .ipad {
+    width:1024px; height:768px; background:#fff; border:10px solid #1c1c22;
+    border-radius:26px; box-shadow:0 24px 60px rgba(19,12,46,.22); overflow:hidden; position:relative;
+    display:flex; flex-direction:column;
+  }
+  .ipad .appbar { height:52px; flex:0 0 52px; background:#fff; border-bottom:1px solid var(--mono-100);
+    display:flex; align-items:center; gap:10px; padding:0 18px; }
+  .ipad .appbar .brand { width:22px; height:22px; border-radius:6px; background:var(--primary-1); }
+  .ipad .appbar .title { font-weight:700; font-size:14px; }
+  .ipad .appbar .pill { margin-left:auto; font-size:11px; color:var(--mono-500); border:1px solid var(--mono-200);
+    padding:4px 10px; border-radius:999px; }
+  .ipad .body { flex:1 1 auto; display:flex; gap:16px; padding:16px; min-height:0; }
+  .col-left { flex:1 1 auto; min-width:0; display:flex; flex-direction:column; gap:10px; }
+  .col-right { flex:0 0 340px; width:340px; display:flex; flex-direction:column; gap:12px;
+    overflow-y:auto; padding-right:2px; }
+  @media all { .ipad.lg .col-right { flex-basis:420px; width:420px; } }
+
+  .toolbar { display:flex; align-items:center; gap:8px; }
+  .toolbar .seg { display:flex; background:var(--mono-50); border:1px solid var(--mono-100); border-radius:999px; padding:2px; }
+  .toolbar .seg button { border:0; background:transparent; font-size:12px; color:var(--mono-500); padding:5px 12px; border-radius:999px; cursor:pointer; }
+  .toolbar .seg button.on { background:#fff; color:var(--mono-900); box-shadow:0 1px 3px rgba(0,0,0,.12); font-weight:600; }
+  .toolbar .search { margin-left:auto; font-size:12px; color:var(--mono-400); border:1px solid var(--mono-200);
+    border-radius:8px; padding:6px 10px; min-width:160px; }
+
+  /* ranked table */
+  .rt { border:1px solid var(--mono-100); border-radius:12px; overflow:hidden; background:#fff; }
+  .rt .rhead, .rt .row { display:grid; grid-template-columns:28px 1fr 96px 64px; align-items:center; gap:8px; padding:9px 12px; }
+  .rt .rhead { font-size:10.5px; text-transform:uppercase; letter-spacing:.05em; color:var(--mono-400); border-bottom:1px solid var(--mono-100); }
+  .rt .row { border-bottom:1px solid var(--mono-75); cursor:pointer; }
+  .rt .row:last-child { border-bottom:0; }
+  .rt .row.sel { background:rgba(70,50,196,.07); border-left:4px solid var(--primary-2); padding-left:8px; }
+  .rt .rank { font-size:12px; font-weight:700; color:var(--mono-400); }
+  .rt .nm { font-size:13px; font-weight:600; }
+  .rt .nm small { display:block; font-weight:400; color:var(--mono-500); font-size:11px; }
+  .bar { height:8px; border-radius:999px; background:var(--mono-100); position:relative; overflow:hidden; }
+  .bar > i { position:absolute; left:0; top:0; bottom:0; background:var(--primary-1); border-radius:999px; }
+  .delta { font-size:12px; font-weight:700; text-align:right; }
+  .up { color:var(--emerald-600); } .down { color:var(--red-600); } .flat { color:var(--mono-500); }
+
+  /* DetailExpand hero (light) */
+  .hero { border:1px solid var(--mono-100); border-radius:14px; padding:12px; background:#fff; position:relative; }
+  .hero.active { border-color:var(--primary-2); background:rgba(70,50,196,.05); }
+  .hero .htop { display:flex; gap:10px; }
+  .hero .img { width:56px; height:56px; border-radius:10px; background:linear-gradient(135deg,#e7e9ff,#c9cdff); flex:0 0 56px; }
+  .hero .statpill { margin-left:auto; align-self:flex-start; font-size:10px; font-weight:700; padding:4px 8px; border-radius:999px;
+    background:var(--emerald-50); color:var(--emerald-700); border:1px solid var(--emerald-300); }
+  .hero .badge { display:inline-flex; align-items:center; gap:4px; font-size:10px; font-weight:700; padding:2px 7px; border-radius:6px; }
+  .badge.top { background:rgba(70,50,196,.1); color:var(--primary-2); border:1px solid rgba(70,50,196,.3); }
+  .hero .name { font-size:15px; font-weight:800; margin-top:8px; }
+  .hero .big { font-size:26px; font-weight:800; letter-spacing:-.02em; }
+  .hero .big small { font-size:12px; font-weight:600; color:var(--mono-500); }
+  .metrics { display:flex; gap:8px; margin-top:10px; }
+  .mc { flex:1; border:1px solid var(--mono-100); border-radius:10px; padding:8px; }
+  .mc .lbl { font-size:9.5px; text-transform:uppercase; letter-spacing:.05em; color:var(--mono-400); }
+  .mc .val { font-size:15px; font-weight:800; }
+  .par { height:8px; border-radius:999px; background:var(--mono-100); position:relative; margin-top:6px; }
+  .par:before { content:""; position:absolute; left:50%; top:-1px; bottom:-1px; width:2px; background:var(--mono-300); }
+  .par > i { position:absolute; top:0; bottom:0; border-radius:999px; }
+  .par > i.pos { left:50%; background:var(--emerald-600); }
+  .par > i.neg { right:50%; background:var(--red-600); }
+  .insight { border-radius:12px; padding:10px 12px; background:var(--primary-3); color:#fff; }
+  .insight .eyebrow { font-size:9.5px; letter-spacing:.08em; text-transform:uppercase; opacity:.8; display:flex; align-items:center; gap:6px; }
+  .insight .eyebrow:before { content:""; width:6px; height:6px; border-radius:999px; background:var(--primary-2-4,#3CFAAE); }
+  .insight p { margin:6px 0 0; font-size:12px; }
+
+  /* ---- the NEW cross-section module ---- */
+  .xsection { border:1px solid var(--mono-100); border-radius:14px; background:#fff; }
+  .xsection .xhead { padding:10px 12px 0; }
+  .xsection .xtitle { font-size:13px; font-weight:800; }
+  .xsection .xperiod { font-size:11px; color:var(--mono-500); margin-top:1px; }
+  .newtag { font-size:9px; font-weight:800; color:var(--primary-2); background:rgba(70,50,196,.1);
+    border:1px solid rgba(70,50,196,.25); border-radius:5px; padding:1px 5px; vertical-align:middle; margin-left:6px; letter-spacing:.04em; }
+  /* DetailTabBar segmented pill */
+  /* segmented pill row: equal-width tabs, wrap (never horizontal-scroll) so no hidden options */
+  .tabbar { display:flex; flex-wrap:wrap; gap:2px; margin:10px 12px 0; background:var(--mono-50); border:1px solid var(--mono-100);
+    border-radius:8px; padding:3px; }
+  .tabbar .tab { flex:1 1 auto; border:0; background:transparent; font-size:11.5px; font-weight:600; color:var(--mono-500);
+    padding:6px 8px; border-radius:6px; cursor:pointer; white-space:nowrap; text-align:center; }
+  .tabbar .tab.on { background:var(--primary-1); color:#fff; box-shadow:0 1px 3px rgba(82,100,255,.4); }
+  .xbody { padding:12px; }
+  .panel { display:none; } .panel.on { display:block; }
+
+  /* On Menus Now — printed-menu card kept inside DetailExpand (unchanged by this work) */
+  .onmenus { margin-top:10px; border:1px dashed var(--mono-200); border-radius:12px; padding:10px 12px; background:var(--mono-50); }
+  .onmenus .omhead { font-size:10px; text-transform:uppercase; letter-spacing:.06em; color:var(--mono-500); font-weight:700; }
+  .onmenus .omline { font-size:12px; font-family:"Courier New",monospace; color:var(--mono-700); margin-top:5px;
+    display:flex; justify-content:space-between; gap:10px; }
+  /* chain-type legend + intentional tab-state demos */
+  .ctlegend { font-size:10.5px; color:var(--mono-400); margin-top:9px; padding-top:8px; border-top:1px solid var(--mono-75); }
+  .states { max-width:1180px; margin:0 auto; display:flex; gap:16px; }
+  .states .scard { flex:1; border:1px solid var(--mono-100); border-radius:12px; padding:12px; background:#fff; }
+  .states .scap { font-size:11px; font-weight:700; color:var(--mono-500); text-transform:uppercase; letter-spacing:.05em; margin-bottom:8px; }
+
+  /* account 2-line cards */
+  .acct { border-bottom:1px solid var(--mono-75); padding:9px 2px; }
+  .acct:last-child { border-bottom:0; }
+  .acct .l1 { display:flex; align-items:center; gap:8px; }
+  .acct .an { font-size:13px; font-weight:700; }
+  .acct .ct { margin-left:auto; padding:2px 9px; border-radius:999px; font-size:10.5px; font-weight:700;
+    color:#fff; white-space:nowrap; align-self:flex-start; }
+  .ct.i { background:var(--mono-500); } .ct.r { background:var(--primary-2); } .ct.n { background:var(--emerald-600); } .ct.c { background:var(--amber-800); }
+  .acct .l2 { font-size:11.5px; color:var(--mono-500); margin-top:2px; }
+
+  /* price distribution */
+  .price .prow { display:grid; grid-template-columns:64px 1fr 40px 40px; align-items:center; gap:8px; padding:7px 2px; }
+  .price .pb { font-size:12px; font-weight:600; }
+  .price .pv { font-size:12px; font-weight:700; text-align:right; }
+
+  /* empty + loading */
+  .empty { text-align:center; padding:26px 14px; color:var(--mono-500); font-size:12.5px; }
+  .empty b { color:var(--mono-700); }
+  .skel { height:14px; border-radius:6px; background:linear-gradient(90deg,var(--mono-75),var(--mono-100),var(--mono-75));
+    background-size:200% 100%; animation:sh 1.2s infinite; margin:10px 2px; }
+  .skel.w60 { width:60%; } .skel.big { height:90px; }
+  @keyframes sh { 0%{background-position:200% 0;} 100%{background-position:-200% 0;} }
+
+  /* ================= phone frame ================= */
+  .phone { width:390px; height:844px; background:var(--mono-50); border:11px solid #1c1c22; border-radius:44px;
+    box-shadow:0 24px 60px rgba(19,12,46,.22); overflow:hidden; position:relative; }
+  .phone .notch { position:absolute; top:0; left:50%; transform:translateX(-50%); width:150px; height:26px;
+    background:#1c1c22; border-radius:0 0 16px 16px; z-index:5; }
+  .phone .pbar { height:46px; display:flex; align-items:center; padding:0 18px; background:#fff; border-bottom:1px solid var(--mono-100); }
+  .phone .pbar .brand { width:20px; height:20px; border-radius:6px; background:var(--primary-1); margin-right:8px; }
+  .phone .pbar .title { font-weight:700; font-size:14px; }
+  .phone .plist { padding:12px; height:100%; overflow:hidden; }
+  /* bottom sheet */
+  .sheet { position:absolute; left:0; right:0; bottom:0; top:120px; background:#fff; border-radius:22px 22px 0 0;
+    box-shadow:0 -12px 40px rgba(19,12,46,.2); display:flex; flex-direction:column; }
+  /* grab handle IS the close affordance (matches app: centered handle + down-chevron, tap to close) */
+  .sheet .grab { display:flex; align-items:center; justify-content:center; width:100%;
+    padding:8px 0 6px; border:0; background:transparent; cursor:pointer; color:var(--mono-400); }
+  .sheet .grab .dc { font-size:26px; line-height:1; }
+  .sheet .grab:hover .dc { color:var(--mono-600); }
+  .sheet .scont { padding:4px 14px 18px; overflow-y:auto; display:flex; flex-direction:column; gap:12px; }
+
+  .scaled { transform-origin:top left; }
+</style>
+</head>
+<body>
+
+<div class="page-head">
+  <h1>Rep Signal — Focused Cross-Section Tabs</h1>
+  <div class="sub">GRO-592 design prototype · mandatory gate before implementation (T1–T9)</div>
+  <div class="meta">
+    Source of truth: docs branch <code>rep-signal-cross-section-tabs-spec</code> @ <code>b5a942b</code> ·
+    House style after <code>gro498-prototype-v2.html</code> · tokens from <code>gsTheme.js</code>
+  </div>
+  <div class="legend">
+    <span class="chip"><span class="sw" style="background:var(--primary-1)"></span> primary-1 (active tab / brand)</span>
+    <span class="chip"><span class="sw" style="background:var(--primary-2)"></span> primary-2 (over-index / selected)</span>
+    <span class="chip"><span class="sw" style="background:var(--emerald-600)"></span> trending / positive</span>
+    <span class="chip"><span class="sw" style="background:var(--red-600)"></span> negative (red-600, not text-danger)</span>
+    <span class="chip"><span class="sw" style="background:var(--amber-300)"></span> both</span>
+  </div>
+</div>
+
+<!-- ============ SCREEN 1: iPad split — MENU (focused Margarita) ============ -->
+<div class="screen-label">1 · iPad split — Menu focus “Margarita” (cocktail dimension)</div>
+<div class="screen">
+  <div class="frame-wrap">
+    <div class="ipad lg">
+      <div class="appbar"><div class="brand"></div><div class="title">Rep Signal · Menu</div>
+        <div class="pill">Los Angeles · Bars · Trends</div></div>
+      <div class="body">
+        <!-- LEFT: ranked table -->
+        <div class="col-left">
+          <div class="toolbar">
+            <div class="seg"><button class="on">Top</button><button>Trends</button></div>
+            <div class="search">Search cocktails…</div>
+          </div>
+          <div class="rt">
+            <div class="rhead"><span>#</span><span>Cocktail</span><span>Menu share</span><span>Δ</span></div>
+            <div class="row sel"><span class="rank">1</span><span class="nm">Margarita</span><span class="bar"><i style="width:82%"></i></span><span class="delta up">▲12%</span></div>
+            <div class="row"><span class="rank">2</span><span class="nm">Espresso Martini</span><span class="bar"><i style="width:74%"></i></span><span class="delta up">▲9%</span></div>
+            <div class="row"><span class="rank">3</span><span class="nm">Paloma</span><span class="bar"><i style="width:61%"></i></span><span class="delta up">▲7%</span></div>
+            <div class="row"><span class="rank">4</span><span class="nm">Old Fashioned</span><span class="bar"><i style="width:55%"></i></span><span class="delta flat">–</span></div>
+            <div class="row"><span class="rank">5</span><span class="nm">Negroni</span><span class="bar"><i style="width:48%"></i></span><span class="delta down">▼3%</span></div>
+            <div class="row"><span class="rank">6</span><span class="nm">Mojito</span><span class="bar"><i style="width:41%"></i></span><span class="delta down">▼5%</span></div>
+          </div>
+        </div>
+        <!-- RIGHT: DetailExpand hero + NEW cross-section module -->
+        <div class="col-right">
+          <div class="hero active">
+            <div class="htop">
+              <div class="img"></div>
+              <div style="flex:1">
+                <span class="badge top">◆ OVER-INDEXES</span>
+                <div class="name">🍹 Margarita <span style="font-size:11px;color:var(--mono-500)">· #1</span></div>
+              </div>
+              <div class="statpill">Menu · Over-index</div>
+            </div>
+            <div class="big" style="margin-top:8px">82% <small>menu share</small></div>
+            <div class="metrics">
+              <div class="mc"><div class="lbl">Index</div><div class="val">1.34×</div><div class="par"><i class="pos" style="width:26%"></i></div></div>
+              <div class="mc"><div class="lbl">Accounts</div><div class="val">318</div></div>
+              <div class="mc"><div class="lbl">Avg price</div><div class="val">$13</div></div>
+            </div>
+            <div class="insight" style="margin-top:10px"><div class="eyebrow">Menu · Overview</div>
+              <p>Margarita over-indexes vs. the LA Bars benchmark and its share is growing YoY.</p></div>
+            <!-- On Menus Now — existing DetailExpand card, UNCHANGED by this work -->
+            <div class="onmenus">
+              <div class="omhead">🧾 On menus now</div>
+              <div class="omline"><span>Margarita</span><span>$12 · The Tipsy Crow</span></div>
+              <div class="omline"><span>Spicy Margarita</span><span>$15 · Barrio Star</span></div>
+              <div class="omline"><span>Mezcal Margarita</span><span>$16 · Polite Provisions</span></div>
+            </div>
+          </div>
+
+          <!-- NEW MODULE: sibling BELOW DetailExpand (added by this work; DetailExpand above is unchanged) -->
+          <div class="xsection" data-xs>
+            <div class="xhead">
+              <div class="xtitle">Cross-section <span class="newtag">NEW</span></div>
+              <div class="xperiod">Cocktails over-indexing vs LA Bars · scoped to Margarita accounts</div>
+            </div>
+            <div class="tabbar">
+              <button class="tab on" data-t="acc">Account</button>
+              <button class="tab" data-t="cat">Category</button>
+              <button class="tab" data-t="price">Price</button>
+              <button class="tab" data-t="brand">Brands</button>
+              <button class="tab" data-t="flav">Flavor</button>
+              <!-- NOTE: no "Cocktails" tab — focused dimension excluded -->
+            </div>
+            <div class="xbody">
+              <div class="panel on" data-p="acc">
+                <div class="acct"><div class="l1"><span class="an">The Tipsy Crow</span><span class="ct i">Independent</span></div><div class="l2">San Diego, CA · Bar / Lounge</div></div>
+                <div class="acct"><div class="l1"><span class="an">Barrio Star</span><span class="ct r">Regional</span></div><div class="l2">San Diego, CA · Restaurant</div></div>
+                <div class="acct"><div class="l1"><span class="an">Polite Provisions</span><span class="ct i">Independent</span></div><div class="l2">San Diego, CA · Craft Cocktail</div></div>
+                <div class="acct"><div class="l1"><span class="an">Cardellino</span><span class="ct r">Regional</span></div><div class="l2">Los Angeles, CA · Restaurant</div></div>
+              </div>
+              <div class="panel" data-p="cat">
+                <div class="rt" style="border:0">
+                  <div class="row"><span class="rank">1</span><span class="nm">Tequila / Mezcal</span><span class="bar"><i style="width:88%"></i></span><span class="delta up">▲14%</span></div>
+                  <div class="row"><span class="rank">2</span><span class="nm">Ready-to-drink</span><span class="bar"><i style="width:44%"></i></span><span class="delta up">▲6%</span></div>
+                  <div class="row"><span class="rank">3</span><span class="nm">Liqueur</span><span class="bar"><i style="width:30%"></i></span><span class="delta flat">–</span></div>
+                </div>
+              </div>
+              <div class="panel price" data-p="price">
+                <div class="prow"><span class="pb">&lt; $8</span><span class="bar"><i style="width:18%;background:var(--mono-400)"></i></span><span class="pv">12%</span><span class="pv up">▲3</span></div>
+                <div class="prow"><span class="pb">$8–12</span><span class="bar"><i style="width:46%;background:var(--mono-400)"></i></span><span class="pv">28%</span><span class="pv down">▼1</span></div>
+                <div class="prow"><span class="pb">$12–16</span><span class="bar"><i style="width:62%"></i></span><span class="pv">31%</span><span class="pv up">▲5</span></div>
+                <div class="prow"><span class="pb">$16–20</span><span class="bar"><i style="width:34%;background:var(--mono-400)"></i></span><span class="pv">18%</span><span class="pv down">▼2</span></div>
+                <div class="prow"><span class="pb">$20 +</span><span class="bar"><i style="width:20%;background:var(--mono-400)"></i></span><span class="pv">11%</span><span class="pv flat">–</span></div>
+              </div>
+              <div class="panel" data-p="brand">
+                <!-- scoped EMPTY state example -->
+                <div class="empty">No focused <b>Brand</b> data for <b>Margarita</b><br>in <b>Los Angeles · Bars</b>.<br>
+                  <span style="font-size:11px">Try a broader market or the Category tab.</span></div>
+              </div>
+              <div class="panel" data-p="flav">
+                <div class="rt" style="border:0">
+                  <div class="row"><span class="rank">1</span><span class="nm">Citrus</span><span class="bar"><i style="width:79%"></i></span><span class="delta up">▲11%</span></div>
+                  <div class="row"><span class="rank">2</span><span class="nm">Salted / Savory</span><span class="bar"><i style="width:52%"></i></span><span class="delta up">▲4%</span></div>
+                  <div class="row"><span class="rank">3</span><span class="nm">Spicy</span><span class="bar"><i style="width:38%"></i></span><span class="delta up">▲8%</span></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="guide">
+    <h3>What to look at</h3>
+    <ul>
+      <li><b>Placement:</b> the cross-section module is a <b>sibling below <code>DetailExpand</code></b> in the sticky right column — not inside the hero.</li>
+      <li><b>Self-dimension exclusion:</b> focused item is a Cocktail, so tabs are Account · Category · Price · Brands · Flavor — <b>no Cocktails tab</b>. Account is always first.</li>
+      <li><b>Scoping:</b> every tab reads from Margarita’s account set (existing focused-item → scoped-account-set pattern), not the whole market.</li>
+      <li><b>Signal-aware header:</b> Margarita <b>over-indexes</b> (the ◆ badge), so the cross-section reads “over-indexing vs LA Bars” — <b>not</b> “trending”. Trending items get the real-date “May 2026 vs May 2025” copy instead (see the Social screen).</li>
+      <li><b>Selecting a tab keeps the focused row</b> highlighted on the left (indigo left-border).</li>
+      <li><b>Empty states are honest</b> — see the Brands tab: names the focused scope, never falls back to unfiltered data.</li>
+      <li><b>Account chain-type badges</b> spell out Independent / Regional / National / Chain (reused from VenueTable’s Chain Type column).</li>
+      <li><b>On Menus Now stays</b> — it’s part of the unchanged <code>DetailExpand</code> above; the cross-section module is purely additive below it.</li>
+    </ul>
+  </div>
+</div>
+
+<!-- ============ SCREEN 2: iPad split — SOCIAL (focused Happy Hour) ============ -->
+<div class="screen-label">2 · iPad split — Social focus “Happy Hour” (mention)</div>
+<div class="screen">
+  <div class="frame-wrap">
+    <div class="ipad lg">
+      <div class="appbar"><div class="brand"></div><div class="title">Rep Signal · Social</div>
+        <div class="pill">Los Angeles · Bars · Trends</div></div>
+      <div class="body">
+        <div class="col-left">
+          <div class="toolbar"><div class="seg"><button>Top</button><button class="on">Trends</button></div><div class="search">Search mentions…</div></div>
+          <div class="rt">
+            <div class="rhead"><span>#</span><span>Mention</span><span>Mention share</span><span>Δ</span></div>
+            <div class="row sel"><span class="rank">1</span><span class="nm">Happy Hour</span><span class="bar"><i style="width:90%"></i></span><span class="delta up">▲18%</span></div>
+            <div class="row"><span class="rank">2</span><span class="nm">Live Music</span><span class="bar"><i style="width:66%"></i></span><span class="delta up">▲10%</span></div>
+            <div class="row"><span class="rank">3</span><span class="nm">Patio / Rooftop</span><span class="bar"><i style="width:58%"></i></span><span class="delta up">▲6%</span></div>
+            <div class="row"><span class="rank">4</span><span class="nm">Brunch</span><span class="bar"><i style="width:44%"></i></span><span class="delta flat">–</span></div>
+            <div class="row"><span class="rank">5</span><span class="nm">Trivia Night</span><span class="bar"><i style="width:33%"></i></span><span class="delta down">▼4%</span></div>
+          </div>
+        </div>
+        <div class="col-right">
+          <div class="hero active">
+            <div class="htop"><div class="img"></div>
+              <div style="flex:1"><span class="badge top" style="background:var(--emerald-50);color:var(--emerald-700);border-color:var(--emerald-300)">▲ TRENDING</span>
+                <div class="name">🍸 Happy Hour <span style="font-size:11px;color:var(--mono-500)">· #1</span></div></div>
+              <div class="statpill">Social Trends ▲</div>
+            </div>
+            <div class="big" style="margin-top:8px">90% <small>mention share</small></div>
+            <div class="metrics">
+              <div class="mc"><div class="lbl">Index</div><div class="val">1.52×</div><div class="par"><i class="pos" style="width:34%"></i></div></div>
+              <div class="mc"><div class="lbl">Mention share</div><div class="val">90%</div><div class="bar" style="margin-top:6px"><i style="width:90%"></i></div></div>
+            </div>
+            <div class="insight" style="margin-top:10px"><div class="eyebrow">Social · Overview</div>
+              <p>Happy Hour mentions are accelerating fastest of any occasion in LA Bars.</p></div>
+          </div>
+
+          <div class="xsection" data-xs>
+            <div class="xhead"><div class="xtitle">Cross-section <span class="newtag">NEW</span></div>
+              <div class="xperiod">Menu trending: May 2026 vs May 2025 · accounts mentioning “Happy Hour”</div></div>
+            <div class="tabbar">
+              <button class="tab on" data-t="acc">Account</button>
+              <button class="tab" data-t="menu">Menu</button>
+              <button class="tab" data-t="sales">Sales</button>
+            </div>
+            <div class="xbody">
+              <div class="panel on" data-p="acc">
+                <div class="acct"><div class="l1"><span class="an">Seven Grand</span><span class="ct i">Independent</span></div><div class="l2">Los Angeles, CA · Whiskey Bar</div></div>
+                <div class="acct"><div class="l1"><span class="an">The Varnish</span><span class="ct i">Independent</span></div><div class="l2">Los Angeles, CA · Cocktail Bar</div></div>
+                <div class="acct"><div class="l1"><span class="an">Break Room 86</span><span class="ct c">Chain</span></div><div class="l2">Los Angeles, CA · Bar / Lounge</div></div>
+              </div>
+              <div class="panel" data-p="menu">
+                <div class="rt" style="border:0">
+                  <div class="row"><span class="rank">1</span><span class="nm">Margarita<small>Cocktails</small></span><span class="bar"><i style="width:84%"></i></span><span class="delta up">▲13%</span></div>
+                  <div class="row"><span class="rank">2</span><span class="nm">Well Tequila<small>Brands</small></span><span class="bar"><i style="width:57%"></i></span><span class="delta up">▲7%</span></div>
+                  <div class="row"><span class="rank">3</span><span class="nm">Draft Beer<small>Category</small></span><span class="bar"><i style="width:46%"></i></span><span class="delta flat">–</span></div>
+                </div>
+              </div>
+              <div class="panel" data-p="sales">
+                <div class="rt" style="border:0">
+                  <div class="row"><span class="rank">1</span><span class="nm">Tequila<small>Category</small></span><span class="bar"><i style="width:86%"></i></span><span class="delta up">▲15%</span></div>
+                  <div class="row"><span class="rank">2</span><span class="nm">Sparkling Wine<small>Category</small></span><span class="bar"><i style="width:52%"></i></span><span class="delta up">▲8%</span></div>
+                  <div class="row"><span class="rank">3</span><span class="nm">Cordials / Liqueur<small>Category</small></span><span class="bar"><i style="width:41%"></i></span><span class="delta up">▲5%</span></div>
+                  <div class="row"><span class="rank">4</span><span class="nm">Domestic Beer<small>Category</small></span><span class="bar"><i style="width:28%"></i></span><span class="delta down">▼2%</span></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="guide">
+    <h3>What to look at</h3>
+    <ul>
+      <li><b>Social tab set:</b> Account · Menu · Sales — all three <b>filtered to the Happy Hour account set</b>, per PRD.</li>
+      <li><b>Menu tab</b> shows top over-indexing / growing menu items <i>within</i> Happy-Hour accounts (item + its dimension noted).</li>
+      <li><b>Sales tab is populated</b> (category depletions in Happy-Hour accounts). Scoped loading/empty states are shown as design artifacts in section 4, not as a blank live tab.</li>
+      <li><b>Header is per-tab period-aware</b> and names the focused mention scope.</li>
+      <li>Same <b>segmented pill tab</b> language (<code>DetailTabBar</code>, active = <code>primary-1</code>) as the Menu screen for consistency.</li>
+    </ul>
+  </div>
+</div>
+
+<!-- ============ SCREEN 3+4: phones ============ -->
+<div class="screen-label">3 · Phone bottom-sheet — Menu (left) &amp; Social (right)</div>
+<div class="screen">
+  <div class="frame-wrap" style="display:flex; gap:26px;">
+    <!-- phone: menu -->
+    <div class="phone">
+      <div class="notch"></div>
+      <div class="pbar"><div class="brand"></div><div class="title">Rep Signal · Menu</div></div>
+      <div class="plist">
+        <div class="rt">
+          <div class="rhead"><span>#</span><span>Cocktail</span><span>Share</span><span>Δ</span></div>
+          <div class="row sel"><span class="rank">1</span><span class="nm">Margarita</span><span class="bar"><i style="width:82%"></i></span><span class="delta up">▲12%</span></div>
+          <div class="row"><span class="rank">2</span><span class="nm">Espresso Martini</span><span class="bar"><i style="width:74%"></i></span><span class="delta up">▲9%</span></div>
+          <div class="row"><span class="rank">3</span><span class="nm">Paloma</span><span class="bar"><i style="width:61%"></i></span><span class="delta up">▲7%</span></div>
+          <div class="row"><span class="rank">4</span><span class="nm">Old Fashioned</span><span class="bar"><i style="width:55%"></i></span><span class="delta flat">–</span></div>
+          <div class="row"><span class="rank">5</span><span class="nm">Negroni</span><span class="bar"><i style="width:48%"></i></span><span class="delta down">▼3%</span></div>
+          <div class="row"><span class="rank">6</span><span class="nm">Mojito</span><span class="bar"><i style="width:41%"></i></span><span class="delta down">▼5%</span></div>
+        </div>
+      </div>
+      <div class="sheet">
+        <button class="grab" title="Close — clears focused item &amp; ?itemId"><span class="dc">⌄</span></button>
+        <div class="scont">
+          <!-- hero first -->
+          <div class="hero active">
+            <div class="htop"><div class="img"></div>
+              <div style="flex:1"><span class="badge top">◆ OVER-INDEXES</span><div class="name">🍹 Margarita · #1</div></div>
+              <div class="statpill">Menu · Over-index</div></div>
+            <div class="big" style="margin-top:8px">82% <small>menu share</small></div>
+            <div class="metrics">
+              <div class="mc"><div class="lbl">Index</div><div class="val">1.34×</div><div class="par"><i class="pos" style="width:26%"></i></div></div>
+              <div class="mc"><div class="lbl">Accounts</div><div class="val">318</div></div>
+              <div class="mc"><div class="lbl">Avg price</div><div class="val">$13</div></div>
+            </div>
+            <div class="insight" style="margin-top:10px"><div class="eyebrow">Menu · Overview</div>
+              <p>Margarita over-indexes vs. the LA Bars benchmark and its share is growing YoY.</p></div>
+            <div class="onmenus">
+              <div class="omhead">🧾 On menus now</div>
+              <div class="omline"><span>Margarita</span><span>$12 · The Tipsy Crow</span></div>
+              <div class="omline"><span>Spicy Margarita</span><span>$15 · Barrio Star</span></div>
+              <div class="omline"><span>Mezcal Margarita</span><span>$16 · Polite Provisions</span></div>
+            </div>
+          </div>
+          <!-- then cross-section module -->
+          <div class="xsection" data-xs>
+            <div class="xhead"><div class="xtitle">Cross-section <span class="newtag">NEW</span></div>
+              <div class="xperiod">Cocktails over-indexing vs LA Bars</div></div>
+            <div class="tabbar">
+              <button class="tab on" data-t="acc">Account</button>
+              <button class="tab" data-t="cat">Category</button>
+              <button class="tab" data-t="price">Price</button>
+              <button class="tab" data-t="brand">Brands</button>
+              <button class="tab" data-t="flav">Flavor</button>
+            </div>
+            <div class="xbody">
+              <div class="panel on" data-p="acc">
+                <div class="acct"><div class="l1"><span class="an">The Tipsy Crow</span><span class="ct i">Independent</span></div><div class="l2">San Diego, CA · Bar / Lounge</div></div>
+                <div class="acct"><div class="l1"><span class="an">Barrio Star</span><span class="ct r">Regional</span></div><div class="l2">San Diego, CA · Restaurant</div></div>
+                <div class="acct"><div class="l1"><span class="an">Polite Provisions</span><span class="ct i">Independent</span></div><div class="l2">San Diego, CA · Craft Cocktail</div></div>
+                <div class="acct"><div class="l1"><span class="an">Cardellino</span><span class="ct r">Regional</span></div><div class="l2">Los Angeles, CA · Restaurant</div></div>
+              </div>
+              <div class="panel" data-p="cat">
+                <div class="rt" style="border:0">
+                  <div class="row"><span class="rank">1</span><span class="nm">Tequila / Mezcal</span><span class="bar"><i style="width:88%"></i></span><span class="delta up">▲14%</span></div>
+                  <div class="row"><span class="rank">2</span><span class="nm">Ready-to-drink</span><span class="bar"><i style="width:44%"></i></span><span class="delta up">▲6%</span></div>
+                  <div class="row"><span class="rank">3</span><span class="nm">Liqueur</span><span class="bar"><i style="width:30%"></i></span><span class="delta flat">–</span></div>
+                </div>
+              </div>
+              <div class="panel price" data-p="price">
+                <div class="prow"><span class="pb">&lt; $8</span><span class="bar"><i style="width:18%;background:var(--mono-400)"></i></span><span class="pv">12%</span><span class="pv up">▲3</span></div>
+                <div class="prow"><span class="pb">$8–12</span><span class="bar"><i style="width:46%;background:var(--mono-400)"></i></span><span class="pv">28%</span><span class="pv down">▼1</span></div>
+                <div class="prow"><span class="pb">$12–16</span><span class="bar"><i style="width:62%"></i></span><span class="pv">31%</span><span class="pv up">▲5</span></div>
+                <div class="prow"><span class="pb">$16–20</span><span class="bar"><i style="width:34%;background:var(--mono-400)"></i></span><span class="pv">18%</span><span class="pv down">▼2</span></div>
+                <div class="prow"><span class="pb">$20 +</span><span class="bar"><i style="width:20%;background:var(--mono-400)"></i></span><span class="pv">11%</span><span class="pv flat">–</span></div>
+              </div>
+              <div class="panel" data-p="brand">
+                <div class="empty">No focused <b>Brand</b> data for <b>Margarita</b><br>in <b>Los Angeles · Bars</b>.<br>
+                  <span style="font-size:11px">Try a broader market or the Category tab.</span></div>
+              </div>
+              <div class="panel" data-p="flav">
+                <div class="rt" style="border:0">
+                  <div class="row"><span class="rank">1</span><span class="nm">Citrus</span><span class="bar"><i style="width:79%"></i></span><span class="delta up">▲11%</span></div>
+                  <div class="row"><span class="rank">2</span><span class="nm">Salted / Savory</span><span class="bar"><i style="width:52%"></i></span><span class="delta up">▲4%</span></div>
+                  <div class="row"><span class="rank">3</span><span class="nm">Spicy</span><span class="bar"><i style="width:38%"></i></span><span class="delta up">▲8%</span></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- phone: social -->
+    <div class="phone">
+      <div class="notch"></div>
+      <div class="pbar"><div class="brand"></div><div class="title">Rep Signal · Social</div></div>
+      <div class="plist">
+        <div class="rt">
+          <div class="rhead"><span>#</span><span>Mention</span><span>Share</span><span>Δ</span></div>
+          <div class="row sel"><span class="rank">1</span><span class="nm">Happy Hour</span><span class="bar"><i style="width:90%"></i></span><span class="delta up">▲18%</span></div>
+          <div class="row"><span class="rank">2</span><span class="nm">Live Music</span><span class="bar"><i style="width:66%"></i></span><span class="delta up">▲10%</span></div>
+          <div class="row"><span class="rank">3</span><span class="nm">Patio / Rooftop</span><span class="bar"><i style="width:58%"></i></span><span class="delta up">▲6%</span></div>
+          <div class="row"><span class="rank">4</span><span class="nm">Brunch</span><span class="bar"><i style="width:44%"></i></span><span class="delta flat">–</span></div>
+          <div class="row"><span class="rank">5</span><span class="nm">Trivia Night</span><span class="bar"><i style="width:33%"></i></span><span class="delta down">▼4%</span></div>
+        </div>
+      </div>
+      <div class="sheet">
+        <button class="grab" title="Close — clears focused item &amp; ?itemId"><span class="dc">⌄</span></button>
+        <div class="scont">
+          <div class="hero active">
+            <div class="htop"><div class="img"></div>
+              <div style="flex:1"><span class="badge top" style="background:var(--emerald-50);color:var(--emerald-700);border-color:var(--emerald-300)">▲ TRENDING</span><div class="name">🍸 Happy Hour · #1</div></div>
+              <div class="statpill">Social Trends ▲</div></div>
+            <div class="big" style="margin-top:8px">90% <small>mention share</small></div>
+            <div class="metrics">
+              <div class="mc"><div class="lbl">Index</div><div class="val">1.52×</div><div class="par"><i class="pos" style="width:34%"></i></div></div>
+              <div class="mc"><div class="lbl">Mention share</div><div class="val">90%</div><div class="bar" style="margin-top:6px"><i style="width:90%"></i></div></div>
+            </div>
+            <div class="insight" style="margin-top:10px"><div class="eyebrow">Social · Overview</div>
+              <p>Happy Hour mentions are accelerating fastest of any occasion in LA Bars.</p></div>
+          </div>
+          <div class="xsection" data-xs>
+            <div class="xhead"><div class="xtitle">Cross-section <span class="newtag">NEW</span></div>
+              <div class="xperiod">Menu trending: May 2026 vs May 2025 · “Happy Hour” accounts</div></div>
+            <div class="tabbar">
+              <button class="tab on" data-t="acc">Account</button>
+              <button class="tab" data-t="menu">Menu</button>
+              <button class="tab" data-t="sales">Sales</button>
+            </div>
+            <div class="xbody">
+              <div class="panel on" data-p="acc">
+                <div class="acct"><div class="l1"><span class="an">Seven Grand</span><span class="ct i">Independent</span></div><div class="l2">Los Angeles, CA · Whiskey Bar</div></div>
+                <div class="acct"><div class="l1"><span class="an">The Varnish</span><span class="ct i">Independent</span></div><div class="l2">Los Angeles, CA · Cocktail Bar</div></div>
+                <div class="acct"><div class="l1"><span class="an">Break Room 86</span><span class="ct c">Chain</span></div><div class="l2">Los Angeles, CA · Bar / Lounge</div></div>
+              </div>
+              <div class="panel" data-p="menu"><div class="rt" style="border:0">
+                <div class="row"><span class="rank">1</span><span class="nm">Margarita<small>Cocktails</small></span><span class="bar"><i style="width:84%"></i></span><span class="delta up">▲13%</span></div>
+                <div class="row"><span class="rank">2</span><span class="nm">Well Tequila<small>Brands</small></span><span class="bar"><i style="width:57%"></i></span><span class="delta up">▲7%</span></div>
+                <div class="row"><span class="rank">3</span><span class="nm">Draft Beer<small>Category</small></span><span class="bar"><i style="width:46%"></i></span><span class="delta flat">–</span></div></div></div>
+              <div class="panel" data-p="sales"><div class="rt" style="border:0">
+                <div class="row"><span class="rank">1</span><span class="nm">Tequila<small>Category</small></span><span class="bar"><i style="width:86%"></i></span><span class="delta up">▲15%</span></div>
+                <div class="row"><span class="rank">2</span><span class="nm">Sparkling Wine<small>Category</small></span><span class="bar"><i style="width:52%"></i></span><span class="delta up">▲8%</span></div>
+                <div class="row"><span class="rank">3</span><span class="nm">Cordials / Liqueur<small>Category</small></span><span class="bar"><i style="width:41%"></i></span><span class="delta up">▲5%</span></div>
+                <div class="row"><span class="rank">4</span><span class="nm">Domestic Beer<small>Category</small></span><span class="bar"><i style="width:28%"></i></span><span class="delta down">▼2%</span></div></div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="guide">
+    <h3>What to look at</h3>
+    <ul>
+      <li><b>Sheet order:</b> focused hero first, then the cross-section subsection below it — matching the split right column.</li>
+      <li><b>All tabs fit in one row</b> (equal-width segments) — no horizontal scroll, so no options are hidden off-screen. Wraps to a second row only if labels ever grow.</li>
+      <li><b>Close lives on the grab handle</b> (tap the handle / down-chevron, plus scrim &amp; Escape) — clears the focused item and <code>?itemId</code>, per current detail behavior. No separate corner button.</li>
+      <li>Same module, same tab language as iPad — one component, two layouts.</li>
+    </ul>
+  </div>
+</div>
+
+<!-- ============ tab content states (intentional design artifacts) ============ -->
+<div class="screen-label">4 · Tab content states (design spec, not live tabs)</div>
+<div class="states">
+  <div class="scard">
+    <div class="scap">Loading (scoped)</div>
+    <div class="skel w60"></div><div class="skel big"></div><div class="skel"></div>
+    <div style="font-size:11px;color:var(--mono-400);margin-top:4px">Skeleton shown only while a focused-scope query is pending — never unfiltered rows.</div>
+  </div>
+  <div class="scard">
+    <div class="scap">Empty (scoped &amp; honest)</div>
+    <div class="empty" style="padding:18px 8px">No focused <b>Brand</b> data for <b>Margarita</b><br>in <b>Los Angeles · Bars</b>.</div>
+    <div style="font-size:11px;color:var(--mono-400);margin-top:4px">Names the focused scope; never silently falls back to market data.</div>
+  </div>
+</div>
+<div class="screen" style="margin-top:14px">
+  <div class="guide" style="max-width:1180px">
+    <h3>Signal-aware header copy — decision &amp; flagged bug</h3>
+    <ul>
+      <li><b>Header mirrors the focused item’s signal:</b> an <b>over-index</b> item → <code>{Dimension} over-indexing vs {benchmark}</code> (e.g. “Cocktails over-indexing vs LA Bars”); a <b>trending</b> item → <code>{Dimension} trending: {Month YYYY} vs {Month YYYY}</code>. Never label an over-index item “trending”.</li>
+      <li><b>Trends real-date fix:</b> for <i>trending</i> items, lift the precise legend dates into the header (<code>May 2026 vs May 2025</code>), replacing today’s vague “vs Year Ago”.</li>
+      <li class="bug">⚠ Bug to fix in implementation: the Sales <code>r3</code> (trailing-3-month) window currently maps to “vs Year Ago”. It should read the real comparison, e.g. <code>vs Feb 2026</code>. Shown corrected here; confirm phrasing with product.</li>
+    </ul>
+  </div>
+</div>
+
+<script>
+  document.querySelectorAll('[data-xs]').forEach(function (mod) {
+    var tabs = mod.querySelectorAll('.tab');
+    var panels = mod.querySelectorAll('.panel');
+    tabs.forEach(function (t) {
+      t.addEventListener('click', function () {
+        tabs.forEach(function (x) { x.classList.remove('on'); });
+        t.classList.add('on');
+        var key = t.getAttribute('data-t');
+        panels.forEach(function (p) { p.classList.toggle('on', p.getAttribute('data-p') === key); });
+      });
+    });
+  });
+</script>
+</body>
+</html>
